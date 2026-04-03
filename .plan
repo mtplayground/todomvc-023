@@ -1,0 +1,85 @@
+# TodoMVC Rust — Architecture Plan
+
+## Overview
+Full-stack Rust TodoMVC: Leptos CSR frontend (Trunk) + Axum backend + SQLite.
+
+## Project Structure
+```
+Cargo.toml              # workspace: members = ["frontend", "server"]
+rust-toolchain.toml     # stable + wasm32-unknown-unknown
+frontend/
+  Cargo.toml            # leptos, gloo-net, serde, leptos_router
+  Trunk.toml
+  index.html            # TodoMVC shell + CSS links
+  css/                  # todomvc-common, todomvc-app-css
+  src/
+    main.rs             # App component, router setup, mount
+    api.rs              # HTTP client (gloo-net) for REST calls
+    state.rs            # Reactive signals: todos, filter, editing
+    components/
+      mod.rs
+      header.rs         # New todo input
+      todo_item.rs      # Single todo (view + edit mode)
+      todo_list.rs      # Filtered list + toggle-all
+      footer.rs         # Count, filters, clear completed
+server/
+  Cargo.toml            # axum, sqlx, serde, tokio, tower-http
+  src/
+    main.rs             # Axum app, static file serving, DB init
+    db.rs               # SQLite pool setup, migrations
+    models.rs           # Todo struct, CreateTodo, UpdateTodo, etc.
+    routes.rs           # REST handlers: CRUD + bulk ops
+  tests/
+    api_tests.rs        # Integration tests (in-memory SQLite)
+migrations/
+  YYYYMMDD_create_todos.sql
+.github/workflows/ci.yml
+```
+
+## Key Design Decisions
+- **No shared crate**: Server-side models duplicated minimally in frontend (serde types in api.rs/state.rs). Keeps wasm compilation simple.
+- **CSR-only Leptos**: No SSR. Trunk builds WASM, Axum serves static files + API.
+- **Hash-based routing**: `#/`, `#/active`, `#/completed` via leptos_router.
+- **SQLite via sqlx**: Compile-time query checking where possible. Auto-run migrations on startup.
+- **gloo-net**: HTTP client for frontend API calls (fetch-based, wasm-compatible).
+
+## Dependency Chain
+```
+#1 (workspace)
+  → #2 (Leptos/Trunk)
+    → #3 (Axum server)
+    → #4 (TodoMVC CSS)
+    → #9 (API client)
+      → #10 (state/signals)
+        → #11 (Header), #12 (TodoItem), #14 (Footer)
+          → #13 (TodoList, depends on #12)
+          → #15 (Editing, depends on #12)
+            → #16 (Routing, depends on #14)
+              → #17 (Assembly, depends on #15, #16)
+                → #19 (Frontend tests)
+                → #21 (README)
+  → #5 (SQLite/migrations, depends on #3)
+    → #6 (Models)
+      → #7 (CRUD endpoints)
+        → #8 (Bulk endpoints)
+          → #18 (Backend tests)
+            → #20 (CI)
+```
+
+## REST API
+- GET    /api/todos              → Vec<Todo>
+- POST   /api/todos              → Todo  (body: {title})
+- PATCH  /api/todos/:id          → Todo  (body: {title?, completed?})
+- DELETE /api/todos/:id          → 204
+- PATCH  /api/todos              → 204   (body: {completed: bool}) — toggle all
+- DELETE /api/todos/completed    → 204   — clear completed
+
+## Todo Schema
+```sql
+CREATE TABLE todos (
+  id TEXT PRIMARY KEY,
+  title TEXT NOT NULL,
+  completed BOOLEAN NOT NULL DEFAULT FALSE,
+  display_order INTEGER NOT NULL
+);
+```
