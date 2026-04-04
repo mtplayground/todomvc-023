@@ -1,3 +1,5 @@
+mod db;
+
 use axum::{http::StatusCode, response::IntoResponse, routing::get, Json, Router};
 use std::net::SocketAddr;
 use tower_http::services::{ServeDir, ServeFile};
@@ -13,6 +15,12 @@ async fn main() {
         .with_env_filter(EnvFilter::from_default_env())
         .init();
 
+    let pool = db::init_pool()
+        .await
+        .expect("failed to initialize database");
+
+    tracing::info!("database initialized");
+
     let frontend_dist = std::env::var("FRONTEND_DIST").unwrap_or_else(|_| "frontend/dist".into());
 
     let serve_dir =
@@ -20,6 +28,7 @@ async fn main() {
 
     let app = Router::new()
         .route("/api/health", get(health))
+        .with_state(pool)
         .fallback_service(serve_dir);
 
     let addr = SocketAddr::from(([0, 0, 0, 0], 8080));
