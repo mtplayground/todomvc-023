@@ -5,10 +5,22 @@ pub mod state;
 use leptos::prelude::*;
 use leptos::wasm_bindgen::JsCast;
 
+use components::footer::Footer;
+use components::header::Header;
+use components::todo_list::TodoList;
+use state::{load_todos, setup_hash_routing, TodoState};
+
 #[component]
 fn App() -> impl IntoView {
+    let state = TodoState::new();
+
+    load_todos(state.clone());
+    setup_hash_routing(state.clone());
+
     view! {
-        <p>"Hello, TodoMVC!"</p>
+        <Header state=state.clone() />
+        <TodoList state=state.clone() />
+        <Footer state=state.clone() />
     }
 }
 
