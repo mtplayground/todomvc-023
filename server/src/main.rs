@@ -1,6 +1,5 @@
-mod db;
-pub mod models;
-mod routes;
+use server::db;
+use server::routes;
 
 use axum::{http::StatusCode, response::IntoResponse, routing::get, Json, Router};
 use std::net::SocketAddr;
