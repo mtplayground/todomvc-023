@@ -1,4 +1,5 @@
 pub mod api;
+pub mod state;
 
 use leptos::prelude::*;
 use leptos::wasm_bindgen::JsCast;
