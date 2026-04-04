@@ -1,4 +1,5 @@
 mod db;
+pub mod models;
 
 use axum::{http::StatusCode, response::IntoResponse, routing::get, Json, Router};
 use std::net::SocketAddr;
