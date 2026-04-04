@@ -1,3 +1,5 @@
+pub mod api;
+
 use leptos::prelude::*;
 use leptos::wasm_bindgen::JsCast;
 
