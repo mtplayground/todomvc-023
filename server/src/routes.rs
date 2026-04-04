@@ -8,11 +8,15 @@ use axum::{
 use sqlx::SqlitePool;
 use uuid::Uuid;
 
-use crate::models::{CreateTodo, Todo, UpdateTodo};
+use crate::models::{BulkUpdateTodos, CreateTodo, Todo, UpdateTodo};
 
 pub fn api_routes() -> Router<SqlitePool> {
     Router::new()
-        .route("/api/todos", get(list_todos).post(create_todo))
+        .route(
+            "/api/todos",
+            get(list_todos).post(create_todo).patch(toggle_all_todos),
+        )
+        .route("/api/todos/completed", axum::routing::delete(clear_completed))
         .route(
             "/api/todos/{id}",
             patch(update_todo).delete(delete_todo),
@@ -129,6 +133,36 @@ async fn delete_todo(
         }
         Err(e) => {
             tracing::error!("failed to delete todo: {e}");
+            StatusCode::INTERNAL_SERVER_ERROR
+        }
+    }
+}
+
+async fn toggle_all_todos(
+    State(pool): State<SqlitePool>,
+    Json(input): Json<BulkUpdateTodos>,
+) -> impl IntoResponse {
+    match sqlx::query("UPDATE todos SET completed = ?")
+        .bind(input.completed)
+        .execute(&pool)
+        .await
+    {
+        Ok(_) => StatusCode::NO_CONTENT,
+        Err(e) => {
+            tracing::error!("failed to toggle all todos: {e}");
+            StatusCode::INTERNAL_SERVER_ERROR
+        }
+    }
+}
+
+async fn clear_completed(State(pool): State<SqlitePool>) -> impl IntoResponse {
+    match sqlx::query("DELETE FROM todos WHERE completed = TRUE")
+        .execute(&pool)
+        .await
+    {
+        Ok(_) => StatusCode::NO_CONTENT,
+        Err(e) => {
+            tracing::error!("failed to clear completed todos: {e}");
             StatusCode::INTERNAL_SERVER_ERROR
         }
     }
