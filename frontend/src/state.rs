@@ -84,3 +84,29 @@ pub fn load_todos(state: TodoState) {
         }
     });
 }
+
+pub fn setup_hash_routing(state: TodoState) {
+    use leptos::wasm_bindgen::JsCast;
+    use leptos::wasm_bindgen::prelude::Closure;
+
+    let window = leptos::tachys::dom::window();
+
+    // Set initial filter from current hash
+    let hash = window.location().hash().unwrap_or_default();
+    state.set_filter.set(Filter::from_hash(&hash));
+
+    // Listen for hash changes
+    let closure = Closure::<dyn Fn()>::new(move || {
+        let hash = leptos::tachys::dom::window()
+            .location()
+            .hash()
+            .unwrap_or_default();
+        state.set_filter.set(Filter::from_hash(&hash));
+    });
+
+    window
+        .add_event_listener_with_callback("hashchange", closure.as_ref().unchecked_ref())
+        .expect("failed to add hashchange listener");
+
+    closure.forget();
+}
