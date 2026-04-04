@@ -1,5 +1,6 @@
 mod db;
 pub mod models;
+mod routes;
 
 use axum::{http::StatusCode, response::IntoResponse, routing::get, Json, Router};
 use std::net::SocketAddr;
@@ -29,6 +30,7 @@ async fn main() {
 
     let app = Router::new()
         .route("/api/health", get(health))
+        .merge(routes::api_routes())
         .with_state(pool)
         .fallback_service(serve_dir);
 
