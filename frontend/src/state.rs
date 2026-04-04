@@ -37,6 +37,12 @@ pub struct TodoState {
     pub set_editing_id: WriteSignal<Option<String>>,
 }
 
+impl Default for TodoState {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl TodoState {
     pub fn new() -> Self {
         let (todos, set_todos) = signal(Vec::<Todo>::new());
@@ -153,7 +159,10 @@ mod tests {
         let active: Vec<_> = todos.iter().filter(|t| Filter::Active.matches(t)).collect();
         assert_eq!(active.len(), 2);
 
-        let completed: Vec<_> = todos.iter().filter(|t| Filter::Completed.matches(t)).collect();
+        let completed: Vec<_> = todos
+            .iter()
+            .filter(|t| Filter::Completed.matches(t))
+            .collect();
         assert_eq!(completed.len(), 1);
         assert_eq!(completed[0].title, "Walk dog");
 
@@ -234,8 +243,8 @@ mod tests {
 }
 
 pub fn setup_hash_routing(state: TodoState) {
-    use leptos::wasm_bindgen::JsCast;
     use leptos::wasm_bindgen::prelude::Closure;
+    use leptos::wasm_bindgen::JsCast;
 
     let window = leptos::tachys::dom::window();
 

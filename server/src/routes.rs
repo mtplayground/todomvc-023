@@ -16,17 +16,19 @@ pub fn api_routes() -> Router<SqlitePool> {
             "/api/todos",
             get(list_todos).post(create_todo).patch(toggle_all_todos),
         )
-        .route("/api/todos/completed", axum::routing::delete(clear_completed))
         .route(
-            "/api/todos/{id}",
-            patch(update_todo).delete(delete_todo),
+            "/api/todos/completed",
+            axum::routing::delete(clear_completed),
         )
+        .route("/api/todos/{id}", patch(update_todo).delete(delete_todo))
 }
 
 async fn list_todos(State(pool): State<SqlitePool>) -> impl IntoResponse {
-    match sqlx::query_as::<_, Todo>("SELECT id, title, completed, display_order FROM todos ORDER BY display_order ASC")
-        .fetch_all(&pool)
-        .await
+    match sqlx::query_as::<_, Todo>(
+        "SELECT id, title, completed, display_order FROM todos ORDER BY display_order ASC",
+    )
+    .fetch_all(&pool)
+    .await
     {
         Ok(todos) => (StatusCode::OK, Json(todos)).into_response(),
         Err(e) => {
@@ -44,13 +46,18 @@ async fn create_todo(
     let title = input.title.trim().to_string();
 
     if title.is_empty() {
-        return (StatusCode::BAD_REQUEST, Json(serde_json::json!({"error": "title must not be empty"}))).into_response();
+        return (
+            StatusCode::BAD_REQUEST,
+            Json(serde_json::json!({"error": "title must not be empty"})),
+        )
+            .into_response();
     }
 
-    let next_order: i64 = sqlx::query_scalar("SELECT COALESCE(MAX(display_order), -1) + 1 FROM todos")
-        .fetch_one(&pool)
-        .await
-        .unwrap_or(0);
+    let next_order: i64 =
+        sqlx::query_scalar("SELECT COALESCE(MAX(display_order), -1) + 1 FROM todos")
+            .fetch_one(&pool)
+            .await
+            .unwrap_or(0);
 
     match sqlx::query_as::<_, Todo>(
         "INSERT INTO todos (id, title, completed, display_order) VALUES (?, ?, FALSE, ?) RETURNING id, title, completed, display_order",
@@ -115,10 +122,7 @@ async fn update_todo(
     }
 }
 
-async fn delete_todo(
-    State(pool): State<SqlitePool>,
-    Path(id): Path<String>,
-) -> impl IntoResponse {
+async fn delete_todo(State(pool): State<SqlitePool>, Path(id): Path<String>) -> impl IntoResponse {
     match sqlx::query("DELETE FROM todos WHERE id = ?")
         .bind(&id)
         .execute(&pool)

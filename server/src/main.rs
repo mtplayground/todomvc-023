@@ -24,8 +24,8 @@ async fn main() {
 
     let frontend_dist = std::env::var("FRONTEND_DIST").unwrap_or_else(|_| "frontend/dist".into());
 
-    let serve_dir =
-        ServeDir::new(&frontend_dist).fallback(ServeFile::new(format!("{frontend_dist}/index.html")));
+    let serve_dir = ServeDir::new(&frontend_dist)
+        .fallback(ServeFile::new(format!("{frontend_dist}/index.html")));
 
     let app = Router::new()
         .route("/api/health", get(health))
@@ -40,7 +40,5 @@ async fn main() {
         .await
         .expect("failed to bind to address");
 
-    axum::serve(listener, app)
-        .await
-        .expect("server error");
+    axum::serve(listener, app).await.expect("server error");
 }
