@@ -46,7 +46,9 @@ fn json_request(method: Method, uri: &str, body: Option<Value>) -> Request<Body>
     let mut builder = Request::builder().method(method).uri(uri);
     if let Some(b) = body {
         builder = builder.header("content-type", "application/json");
-        builder.body(Body::from(serde_json::to_vec(&b).expect("serialize"))).expect("build request")
+        builder
+            .body(Body::from(serde_json::to_vec(&b).expect("serialize")))
+            .expect("build request")
     } else {
         builder.body(Body::empty()).expect("build request")
     }
@@ -234,7 +236,11 @@ async fn test_delete_todo() {
     // Delete
     let resp = app
         .clone()
-        .oneshot(json_request(Method::DELETE, &format!("/api/todos/{id}"), None))
+        .oneshot(json_request(
+            Method::DELETE,
+            &format!("/api/todos/{id}"),
+            None,
+        ))
         .await
         .expect("request failed");
     assert_eq!(resp.status(), StatusCode::NO_CONTENT);
@@ -253,7 +259,11 @@ async fn test_delete_nonexistent_todo() {
     let app = setup_app().await;
 
     let resp = app
-        .oneshot(json_request(Method::DELETE, "/api/todos/nonexistent-id", None))
+        .oneshot(json_request(
+            Method::DELETE,
+            "/api/todos/nonexistent-id",
+            None,
+        ))
         .await
         .expect("request failed");
 
@@ -266,11 +276,19 @@ async fn test_toggle_all() {
 
     // Create two todos
     app.clone()
-        .oneshot(json_request(Method::POST, "/api/todos", Some(json!({"title": "A"}))))
+        .oneshot(json_request(
+            Method::POST,
+            "/api/todos",
+            Some(json!({"title": "A"})),
+        ))
         .await
         .expect("request failed");
     app.clone()
-        .oneshot(json_request(Method::POST, "/api/todos", Some(json!({"title": "B"}))))
+        .oneshot(json_request(
+            Method::POST,
+            "/api/todos",
+            Some(json!({"title": "B"})),
+        ))
         .await
         .expect("request failed");
 
@@ -324,14 +342,22 @@ async fn test_clear_completed() {
     // Create two todos
     let resp = app
         .clone()
-        .oneshot(json_request(Method::POST, "/api/todos", Some(json!({"title": "Keep"}))))
+        .oneshot(json_request(
+            Method::POST,
+            "/api/todos",
+            Some(json!({"title": "Keep"})),
+        ))
         .await
         .expect("request failed");
     let keep_body = json_body(resp.into_body()).await;
     let keep_id = keep_body["id"].as_str().expect("id").to_string();
 
     app.clone()
-        .oneshot(json_request(Method::POST, "/api/todos", Some(json!({"title": "Remove"}))))
+        .oneshot(json_request(
+            Method::POST,
+            "/api/todos",
+            Some(json!({"title": "Remove"})),
+        ))
         .await
         .expect("request failed");
 
@@ -378,11 +404,19 @@ async fn test_display_order_increments() {
     let app = setup_app().await;
 
     app.clone()
-        .oneshot(json_request(Method::POST, "/api/todos", Some(json!({"title": "First"}))))
+        .oneshot(json_request(
+            Method::POST,
+            "/api/todos",
+            Some(json!({"title": "First"})),
+        ))
         .await
         .expect("request failed");
     app.clone()
-        .oneshot(json_request(Method::POST, "/api/todos", Some(json!({"title": "Second"}))))
+        .oneshot(json_request(
+            Method::POST,
+            "/api/todos",
+            Some(json!({"title": "Second"})),
+        ))
         .await
         .expect("request failed");
 

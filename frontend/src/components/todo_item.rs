@@ -1,5 +1,5 @@
-use leptos::prelude::*;
 use leptos::ev;
+use leptos::prelude::*;
 use leptos::wasm_bindgen::JsCast;
 
 use crate::api::{self, Todo, UpdateTodo};
@@ -127,14 +127,12 @@ pub fn TodoItem(todo: Todo, state: TodoState) -> impl IntoView {
     let on_edit_keydown = {
         let save_edit = save_edit.clone();
         let state = state.clone();
-        move |ev: ev::KeyboardEvent| {
-            match ev.key().as_str() {
-                "Enter" => save_edit(),
-                "Escape" => {
-                    state.set_editing_id.set(None);
-                }
-                _ => {}
+        move |ev: ev::KeyboardEvent| match ev.key().as_str() {
+            "Enter" => save_edit(),
+            "Escape" => {
+                state.set_editing_id.set(None);
             }
+            _ => {}
         }
     };
 
